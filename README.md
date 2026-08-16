@@ -31,6 +31,23 @@ async def main():
             print(event.start, event.end, event.period, event.duration)
 ```
 
+Example output:
+
+```
+2026-01-22 06:00:00-05:00  2026-01-22 09:00:00-05:00  AM  3:00:00
+2026-01-22 16:00:00-05:00  2026-01-22 20:00:00-05:00  PM  4:00:00
+```
+
+Check if a peak event is happening right now:
+
+```python
+from datetime import datetime, timezone
+
+events = await client.get_events()
+now = datetime.now(timezone.utc)
+active = [e for e in events if e.is_active(now)]
+```
+
 Notes:
 
 - Offer identifiers are the strings published in `offresDisponibles`, used verbatim. The library applies no transformation; `get_events(offer)` filters by exact match.
