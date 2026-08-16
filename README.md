@@ -34,6 +34,7 @@ async def main():
 Notes:
 
 - Offer identifiers are the strings published in `offresDisponibles`, used verbatim. The library applies no transformation; `get_events(offer)` filters by exact match.
+- `get_offer_labels()` maps each canonical offer identifier to a display label for UIs. Labels currently equal the identifiers; once Hydro-Québec publishes display titles in its open data, a library update will source labels from there without any change to the method's contract — persist the keys, show the values.
 - The client sends conditional requests (`If-None-Match`) and serves its cached parse on `304 Not Modified`, so frequent polling is cheap for both sides. Concurrent refreshes are serialized on a lock.
 - All datetimes from the feed are timezone-aware. `PeakEventsFeed.last_execution` is naive (the feed publishes it without an offset).
 - Errors raise typed exceptions: `OpenDataConnectionError`, `OpenDataRateLimitError`, `OpenDataResponseError`, `OpenDataParseError` — all subclasses of `OpenDataError`. Failures never silently return empty data.

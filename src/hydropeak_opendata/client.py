@@ -105,6 +105,22 @@ class OpenDataClient:
         feed = await self.get_feed()
         return feed.offers
 
+    async def get_offer_labels(self) -> dict[str, str]:
+        """Map each canonical offer identifier to a human-readable label.
+
+        Keys are the canonical strings from ``offresDisponibles`` — the
+        values to persist and to pass to :meth:`get_events`. Values are
+        display labels for UIs such as a selection form.
+
+        Labels are currently the canonical strings themselves, because
+        Hydro-Québec does not yet publish display titles in its open data.
+        When it does (expected in the offer descriptions dataset), a library
+        update will source labels from there — the keys and this method's
+        contract will not change, so consumers need no code change.
+        """
+        feed = await self.get_feed()
+        return {offer: offer for offer in feed.offers}
+
     async def get_offer_descriptions(
         self, active_on: date | None = None
     ) -> tuple[OfferDescription, ...]:

@@ -157,6 +157,17 @@ async def test_get_events_and_offers(client, fake, winter_feed):
     assert len(cpc_events) == 3
 
 
+async def test_get_offer_labels_identity_until_upstream_ships_titles(client, fake, winter_feed):
+    fake.feed_responses = [json_ok(winter_feed)]
+    labels = await client.get_offer_labels()
+
+    assert set(labels) == set(winter_feed["offresDisponibles"])
+    # Until Hydro-Québec publishes display titles, labels equal the
+    # canonical identifiers. Sourcing prettier labels later must not
+    # change the keys.
+    assert all(key == value for key, value in labels.items())
+
+
 async def test_get_offer_descriptions_paginates(client, fake):
     def make_record(index):
         return {"offresdisponibles": f"OFFER_{index}", "description_fr": f"desc {index}"}
