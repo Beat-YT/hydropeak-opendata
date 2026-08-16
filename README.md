@@ -6,8 +6,12 @@ Extracted from the [HydroPeak](https://github.com/Beat-YT/hydropeak-ha) Home Ass
 
 ## Data sources
 
-- **Peak events feed** — `pointeshivernales.json`: available offers (canonical, verbatim) and scheduled peak events.
-- **Offer descriptions** — the `evenements-de-pointe-offres-disponibles` Opendatasoft dataset (rate limited; intended for occasional use such as setup flows).
+Data comes from [Hydro-Québec's open data portal](https://donnees.hydroquebec.com/explore/dataset/evenements-pointe/information/).
+
+During Quebec winters (December 1 to March 31), Hydro-Québec triggers **peak demand events** (_événements de pointe_) when electricity demand is high due to cold weather and operational constraints. Customers enrolled in participating offers (e.g. Winter Credit, Flex, Hilo) are asked to reduce their consumption during these events — typically in the morning (AM) or evening (PM) — and receive bill credits in return. The dataset is updated as events are scheduled, and covers both residential and business customers.
+
+- **[Peak events](https://donnees.hydroquebec.com/explore/dataset/evenements-pointe/information/)** — scheduled peak demand events with start/end times, time period (AM/PM), duration, applicable offer, and customer sector.
+- **[Available offers](https://donnees.hydroquebec.com/explore/dataset/evenements-de-pointe-offres-disponibles/information/)** — the list of programs available each season, with descriptions and validity dates (rate limited; intended for occasional use such as setup flows).
 
 ## Usage
 
