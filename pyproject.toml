@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hydropeak-opendata"
+version = "0.1.0"
+description = "Async client for Hydro-Québec's public peak events (pointes hivernales) open data"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Beat-YT" }]
+requires-python = ">=3.11"
+dependencies = ["aiohttp>=3.9"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Home Automation",
+]
+
+[project.urls]
+Homepage = "https://github.com/Beat-YT/hydropeak-opendata"
+Issues = "https://github.com/Beat-YT/hydropeak-opendata/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-aiohttp>=1.1",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hydropeak_opendata"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+packages = ["hydropeak_opendata"]
+mypy_path = "src"

@@ -1,0 +1,47 @@
+{
+    "offresDisponibles": [
+        "Credit hivernal Residentiel (CPC-D)",
+        "Credit hivernal Affaires (CPC-G)",
+        "Flex Residentiel (TPC-DPC)",
+        "Flex Affaires (TPC-GPC)",
+        "OEA",
+        "Chaine de bloc"
+    ],
+    "derniereExecution": [
+        "2026-01-09 05:31:10"
+    ],
+    "evenements": [
+        {
+            "offre": "Credit hivernal Residentiel (CPC-D)",
+            "dateDebut": "2026-01-09T06:00:00-05:00",
+            "dateFin": "2026-01-09T09:00:00-05:00",
+            "plageHoraire": "AM",
+            "duree": "PT03H00MS",
+            "secteurClient": "Residentiel"
+        },
+        {
+            "offre": "Flex Residentiel (TPC-DPC)",
+            "dateDebut": "2026-01-09T16:00:00-05:00",
+            "dateFin": "2026-01-09T20:00:00-05:00",
+            "plageHoraire": "PM",
+            "duree": "PT04H00MS",
+            "secteurClient": "Residentiel"
+        },
+        {
+            "offre": "Credit hivernal Residentiel (CPC-D)",
+            "dateDebut": "2026-01-09T16:00:00-05:00",
+            "dateFin": "2026-01-09T20:00:00-05:00",
+            "plageHoraire": "PM",
+            "duree": "PT04H00MS",
+            "secteurClient": "Residentiel"
+        },
+        {
+            "offre": "Credit hivernal Residentiel (CPC-D)",
+            "dateDebut": "2026-01-10T06:00:00-05:00",
+            "dateFin": "2026-01-10T09:00:00-05:00",
+            "plageHoraire": "AM",
+            "duree": "PT03H00MS",
+            "secteurClient": "Residentiel"
+        }
+    ]
+}
