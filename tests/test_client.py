@@ -189,3 +189,36 @@ async def test_get_offer_descriptions_rate_limited(client, fake):
     fake.desc_status = 429
     with pytest.raises(OpenDataRateLimitError):
         await client.get_offer_descriptions()
+
+
+async def test_get_events_matches_any_spelling_end_to_end(client, fake):
+    def event(offer, day):
+        return {
+            "offre": offer,
+            "dateDebut": f"2026-01-{day:02d}T16:00:00-05:00",
+            "dateFin": f"2026-01-{day:02d}T20:00:00-05:00",
+            "plageHoraire": "PM",
+            "secteurClient": "Residentiel",
+        }
+
+    feed = {
+        "offresDisponibles": ["Flex Residentiel (TPC-DPC)", "Chaine de bloc"],
+        "evenements": [
+            event("Flex Residentiel (TPC-DPC)", 10),
+            event("TPC-DPC", 11),
+            event("Flex Résidentiel (tpc-dpc)", 12),
+            event("Chaine de bloc", 13),
+        ],
+    }
+    queries = ["TPC-DPC", "tpc-dpc", "Flex Residentiel (TPC-DPC)", "FLEX RÉSIDENTIEL (TPC-DPC)"]
+    fake.feed_responses = [json_ok(feed)] + [status(304)] * (len(queries) + 1)
+
+    for query in queries:
+        events = await client.get_events(query)
+        assert [e.offer for e in events] == [
+            "Flex Residentiel (TPC-DPC)",
+            "TPC-DPC",
+            "Flex Résidentiel (tpc-dpc)",
+        ], query
+
+    assert [e.offer for e in await client.get_events("chaîne de BLOC")] == ["Chaine de bloc"]
