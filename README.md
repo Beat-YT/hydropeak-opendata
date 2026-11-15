@@ -51,7 +51,7 @@ active = [e for e in events if e.is_active(now)]
 Notes:
 
 - Offer identifiers are the strings published in `offresDisponibles`, returned verbatim.
-- Hydro-Québec names the same offer differently across sources: the feed uses display names (`Flex Residentiel (TPC-DPC)`) while the offers and historical events datasets use bare codes (`TPC-DPC`). `get_events(offer)` matches on the normalized code, so either spelling selects the same events. `normalize_offer_code()` exposes that mapping (backed by `OFFER_CODE_ALIASES` in `const.py`), and `PeakEvent.offer_code` gives the code for an event.
+- Hydro-Québec names the same offer differently across sources: the feed uses display names (`Flex Residentiel (TPC-DPC)`) while the offers and historical events datasets use bare codes (`TPC-DPC`). `get_events(offer)` matches on the normalized code, so either spelling selects the same events. `normalize_offer_code()` exposes that mapping (its known aliases live in `OFFER_CODE_ALIASES` in `const.py`), and `PeakEvent.offer_code` gives the code for an event.
 - `get_offer_labels()` maps each canonical offer identifier to a display label for UIs. Labels currently equal the identifiers; once Hydro-Québec publishes display titles in its open data, a library update will source labels from there without any change to the method's contract — persist the keys, show the values.
 - The client sends conditional requests (`If-None-Match`) and serves its cached parse on `304 Not Modified`, so frequent polling is cheap for both sides. Concurrent refreshes are serialized on a lock.
 - All datetimes from the feed are timezone-aware. `PeakEventsFeed.last_execution` is naive (the feed publishes it without an offset).

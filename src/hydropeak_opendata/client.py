@@ -8,6 +8,7 @@ from datetime import date
 
 import aiohttp
 
+from .const import DESCRIPTIONS_PAGE_SIZE, OFFER_DESCRIPTIONS_URL, PEAK_EVENTS_URL
 from .exceptions import (
     OpenDataConnectionError,
     OpenDataParseError,
@@ -21,15 +22,6 @@ from .models import (
     parse_feed,
     parse_offer_description,
 )
-
-PEAK_EVENTS_URL = (
-    "https://donnees.solutions.hydroquebec.com/donnees-ouvertes/data/json/pointeshivernales.json"
-)
-OFFER_DESCRIPTIONS_URL = (
-    "https://donnees.hydroquebec.com/api/explore/v2.1/catalog/datasets"
-    "/evenements-de-pointe-offres-disponibles/records"
-)
-_DESCRIPTIONS_PAGE_SIZE = 100
 
 
 class OpenDataClient:
@@ -132,7 +124,7 @@ class OpenDataClient:
         transparently. ``active_on`` filters to descriptions whose validity
         window covers that date.
         """
-        params: dict[str, str | int] = {"limit": _DESCRIPTIONS_PAGE_SIZE}
+        params: dict[str, str | int] = {"limit": DESCRIPTIONS_PAGE_SIZE}
         if active_on is not None:
             day = active_on.isoformat()
             params["where"] = f"debut<='{day}' AND fin>='{day}'"

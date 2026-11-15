@@ -6,8 +6,24 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from .const import normalize_offer_code
+from .const import OFFER_CODE_ALIASES, OFFER_CODE_PATTERN
 from .exceptions import OpenDataParseError
+
+
+def normalize_offer_code(offer: str) -> str:
+    """Return the offer code that ``offer`` refers to.
+
+    Accepts either a bare code (returned as-is) or any known display name
+    for it, so ``"TPC-DPC"`` and ``"Flex Residentiel (TPC-DPC)"`` both
+    normalize to ``"TPC-DPC"``. Offers that carry no code, such as ``"OEA"``
+    or ``"ENG_100H_2F_7J"``, are returned unchanged (whitespace-stripped).
+    """
+    offer = offer.strip()
+    if (code := OFFER_CODE_ALIASES.get(offer)) is not None:
+        return code
+    if (match := OFFER_CODE_PATTERN.search(offer)) is not None:
+        return match.group(1)
+    return offer
 
 
 @dataclass(frozen=True, slots=True)
