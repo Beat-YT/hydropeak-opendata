@@ -16,6 +16,14 @@ from hydropeak_opendata import OFFER_CODE_ALIASES, normalize_offer_code, parse_f
         ("Credit hivernal Affaires (CPC-G)", "CPC-G"),
         ("TPC-DPC", "TPC-DPC"),
         ("  TPC-DPC ", "TPC-DPC"),
+        # Accents, case and whitespace are ignored.
+        ("tpc-dpc", "TPC-DPC"),
+        ("Crédit hivernal Résidentiel (CPC-D)", "CPC-D"),
+        ("FLEX RÉSIDENTIEL (tpc-dpc)", "TPC-DPC"),
+        ("flex   residentiel  (TPC-DPC)", "TPC-DPC"),
+        ("Flex Résidentiel ( tpc-gpc )", "TPC-GPC"),
+        ("Nouvelle offre (tpc-dpc)", "TPC-DPC"),
+        ("Nouvelle offre (ABC-1)", "ABC-1"),
         # Unlisted display name falls back to the trailing code.
         ("Flex D (TPC-DPC)", "TPC-DPC"),
         # Offers without a code are untouched.
@@ -67,3 +75,23 @@ def test_events_for_offer_matches_across_spellings():
     # Offers stay verbatim; only matching is normalized.
     assert feed.offers == ("Flex Residentiel (TPC-DPC)", "OEA")
     assert [e.offer for e in feed.events_for_offer("OEA")] == ["OEA"]
+
+
+def test_events_for_offer_ignores_accents_and_case():
+    feed = parse_feed(
+        {
+            "offresDisponibles": [],
+            "evenements": [
+                _event("Flex Residentiel (TPC-DPC)", 10),
+                _event("Chaine de bloc", 11),
+                _event("OEA", 12),
+            ],
+        }
+    )
+
+    assert [e.offer for e in feed.events_for_offer("flex résidentiel (tpc-dpc)")] == [
+        "Flex Residentiel (TPC-DPC)"
+    ]
+    assert [e.offer for e in feed.events_for_offer("Chaîne de BLOC")] == ["Chaine de bloc"]
+    assert [e.offer for e in feed.events_for_offer("oea")] == ["OEA"]
+    assert feed.events_for_offer("OEA Serres") == ()

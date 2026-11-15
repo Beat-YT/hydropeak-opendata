@@ -27,5 +27,6 @@ OFFER_CODE_ALIASES: Final[dict[str, str]] = {
 }
 
 # Fallback for display names not in OFFER_CODE_ALIASES: a trailing
-# parenthesized code, e.g. "Flex D (TPC-DPC)" -> "TPC-DPC".
-OFFER_CODE_PATTERN: Final = re.compile(r"\(\s*([A-Za-z0-9][A-Za-z0-9_-]*)\s*\)\s*$")
+# parenthesized code, e.g. "Flex D (TPC-DPC)" -> "TPC-DPC". ``\w`` is
+# Unicode-aware, so accented letters inside the code still match.
+OFFER_CODE_PATTERN: Final = re.compile(r"\(\s*(\w[\w-]*)\s*\)\s*$")
