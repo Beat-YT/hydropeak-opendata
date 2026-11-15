@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from .const import normalize_offer_code
 from .exceptions import OpenDataParseError
 
 
@@ -18,6 +19,11 @@ class PeakEvent:
     end: datetime
     period: str | None
     sector: str | None
+
+    @property
+    def offer_code(self) -> str:
+        """The offer code this event belongs to (see :func:`normalize_offer_code`)."""
+        return normalize_offer_code(self.offer)
 
     @property
     def duration(self) -> timedelta:
@@ -42,8 +48,14 @@ class PeakEventsFeed:
     last_execution: datetime | None
 
     def events_for_offer(self, offer: str) -> tuple[PeakEvent, ...]:
-        """Events whose ``offre`` value equals ``offer``, sorted by start time."""
-        return tuple(event for event in self.events if event.offer == offer)
+        """Events for ``offer``, sorted by start time.
+
+        Matching is done on the normalized offer code, so ``"TPC-DPC"`` and
+        ``"Flex Residentiel (TPC-DPC)"`` select the same events regardless
+        of which spelling the feed used.
+        """
+        code = normalize_offer_code(offer)
+        return tuple(event for event in self.events if event.offer_code == code)
 
 
 @dataclass(frozen=True, slots=True)

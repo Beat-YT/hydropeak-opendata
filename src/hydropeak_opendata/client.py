@@ -94,7 +94,7 @@ class OpenDataClient:
             return feed
 
     async def get_events(self, offer: str | None = None) -> tuple[PeakEvent, ...]:
-        """Fetch events, optionally filtered to one offer (exact match)."""
+        """Fetch events, optionally filtered to one offer (code or display name)."""
         feed = await self.get_feed()
         if offer is None:
             return feed.events

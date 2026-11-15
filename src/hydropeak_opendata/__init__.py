@@ -1,6 +1,7 @@
 """Async client for Hydro-Québec's peak events (pointes hivernales) open data."""
 
 from .client import OFFER_DESCRIPTIONS_URL, PEAK_EVENTS_URL, OpenDataClient
+from .const import OFFER_CODE_ALIASES, normalize_offer_code
 from .exceptions import (
     OpenDataConnectionError,
     OpenDataError,
@@ -16,6 +17,7 @@ from .models import (
 )
 
 __all__ = [
+    "OFFER_CODE_ALIASES",
     "OFFER_DESCRIPTIONS_URL",
     "PEAK_EVENTS_URL",
     "OfferDescription",
@@ -27,5 +29,6 @@ __all__ = [
     "OpenDataResponseError",
     "PeakEvent",
     "PeakEventsFeed",
+    "normalize_offer_code",
     "parse_feed",
 ]

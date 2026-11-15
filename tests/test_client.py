@@ -146,15 +146,17 @@ async def test_concurrent_callers_are_serialized(client, fake, winter_feed):
 
 
 async def test_get_events_and_offers(client, fake, winter_feed):
-    fake.feed_responses = [json_ok(winter_feed), status(304), status(304)]
+    fake.feed_responses = [json_ok(winter_feed), status(304), status(304), status(304)]
 
     offers = await client.get_available_offers()
     all_events = await client.get_events()
     cpc_events = await client.get_events("Credit hivernal Residentiel (CPC-D)")
+    tpc_events = await client.get_events("TPC-DPC")
 
     assert "Flex Residentiel (TPC-DPC)" in offers
     assert len(all_events) == 4
     assert len(cpc_events) == 3
+    assert [e.offer for e in tpc_events] == ["Flex Residentiel (TPC-DPC)"]
 
 
 async def test_get_offer_labels_identity_until_upstream_ships_titles(client, fake, winter_feed):
