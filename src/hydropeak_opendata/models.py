@@ -2,11 +2,45 @@
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from functools import lru_cache
 from typing import Any
 
+from .const import OFFER_CODE_ALIASES, OFFER_CODE_PATTERN
 from .exceptions import OpenDataParseError
+
+
+def _fold(value: str) -> str:
+    """Comparison key: accents stripped, case-folded, whitespace collapsed."""
+    decomposed = unicodedata.normalize("NFKD", value)
+    stripped = "".join(char for char in decomposed if not unicodedata.combining(char))
+    return " ".join(stripped.casefold().split())
+
+
+@lru_cache(maxsize=256)
+def normalize_offer_code(offer: str) -> str:
+    """Return the offer code that ``offer`` refers to.
+
+    Accepts either a bare code or any display name for it, ignoring accents,
+    letter case and extra whitespace: ``"TPC-DPC"``, ``"tpc-dpc"``,
+    ``"Flex Residentiel (TPC-DPC)"`` and ``"FLEX RÉSIDENTIEL (tpc-dpc)"`` all
+    normalize to ``"TPC-DPC"``. Known codes are returned in their canonical
+    spelling. Offers that carry no code, such as ``"OEA"`` or
+    ``"ENG_100H_2F_7J"``, are returned with whitespace collapsed and are
+    otherwise unchanged; :meth:`PeakEventsFeed.events_for_offer` still
+    compares them without regard to accents or case.
+    """
+    offer = " ".join(offer.split())
+    folded = _fold(offer)
+    for name, code in OFFER_CODE_ALIASES.items():
+        if folded in (_fold(name), _fold(code)):
+            return code
+    if (match := OFFER_CODE_PATTERN.search(offer)) is not None:
+        # Recurse so a known code in any case/accent maps to its canonical form.
+        return normalize_offer_code(match.group(1))
+    return offer
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +52,11 @@ class PeakEvent:
     end: datetime
     period: str | None
     sector: str | None
+
+    @property
+    def offer_code(self) -> str:
+        """The offer code this event belongs to (see :func:`normalize_offer_code`)."""
+        return normalize_offer_code(self.offer)
 
     @property
     def duration(self) -> timedelta:
@@ -42,8 +81,15 @@ class PeakEventsFeed:
     last_execution: datetime | None
 
     def events_for_offer(self, offer: str) -> tuple[PeakEvent, ...]:
-        """Events whose ``offre`` value equals ``offer``, sorted by start time."""
-        return tuple(event for event in self.events if event.offer == offer)
+        """Events for ``offer``, sorted by start time.
+
+        Matching is done on the normalized offer code and ignores accents
+        and letter case, so ``"TPC-DPC"``, ``"tpc-dpc"`` and
+        ``"Flex Résidentiel (TPC-DPC)"`` select the same events regardless
+        of which spelling the feed used.
+        """
+        key = _fold(normalize_offer_code(offer))
+        return tuple(event for event in self.events if _fold(event.offer_code) == key)
 
 
 @dataclass(frozen=True, slots=True)

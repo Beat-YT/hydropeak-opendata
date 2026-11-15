@@ -34,7 +34,7 @@ def test_offers_are_verbatim(winter_feed):
     assert feed.offers[0] == "Credit hivernal Residentiel (CPC-D)"
 
 
-def test_events_for_offer_exact_match(winter_feed):
+def test_events_for_offer(winter_feed):
     feed = parse_feed(winter_feed)
 
     events = feed.events_for_offer("Credit hivernal Residentiel (CPC-D)")
@@ -42,6 +42,7 @@ def test_events_for_offer_exact_match(winter_feed):
     assert all(event.offer == "Credit hivernal Residentiel (CPC-D)" for event in events)
 
     assert feed.events_for_offer("Flex Residentiel (TPC-DPC)") != ()
+    assert feed.events_for_offer("CPC-D") == events
     assert feed.events_for_offer("nonexistent") == ()
 
 
