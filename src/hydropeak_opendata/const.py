@@ -13,6 +13,9 @@ OFFER_DESCRIPTIONS_URL: Final = (
     "/evenements-de-pointe-offres-disponibles/records"
 )
 DESCRIPTIONS_PAGE_SIZE: Final = 100
+PEAK_EVENTS_TABLE_URL: Final = (
+    "https://donnees.hydroquebec.com/explore/dataset/evenements-pointe/table/"
+)
 
 # Hydro-Québec publishes the same offer under different names depending on
 # the source: the offer descriptions dataset and the historical events

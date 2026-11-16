@@ -4,7 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-from hydropeak_opendata import OFFER_CODE_ALIASES, normalize_offer_code, parse_feed
+from hydropeak_opendata import (
+    OFFER_CODE_ALIASES,
+    build_events_table_url,
+    normalize_offer_code,
+    parse_feed,
+)
+
+TABLE_URL = "https://donnees.hydroquebec.com/explore/dataset/evenements-pointe/table/"
+DISJUNCTIVE = "disjunctive.offre&disjunctive.plagehoraire&disjunctive.secteurclient"
 
 
 @pytest.mark.parametrize(
@@ -95,3 +103,20 @@ def test_events_for_offer_ignores_accents_and_case():
     assert [e.offer for e in feed.events_for_offer("Chaîne de BLOC")] == ["Chaine de bloc"]
     assert [e.offer for e in feed.events_for_offer("oea")] == ["OEA"]
     assert feed.events_for_offer("OEA Serres") == ()
+
+
+@pytest.mark.parametrize(
+    ("offer", "refine"),
+    [
+        (
+            "Credit hivernal Residentiel (CPC-D)",
+            "refine.offre=Credit+hivernal+Residentiel+(CPC-D)&refine.offre=CPC-D&",
+        ),
+        ("CPC-D", "refine.offre=CPC-D&"),
+        ("CpC-d", "refine.offre=CpC-d&refine.offre=CPC-D&"),
+        ("OEA Serres", "refine.offre=OEA+Serres&"),
+        (None, ""),
+    ],
+)
+def test_build_events_table_url(offer, refine):
+    assert build_events_table_url(offer) == f"{TABLE_URL}?sort=datedebut&{refine}{DISJUNCTIVE}"

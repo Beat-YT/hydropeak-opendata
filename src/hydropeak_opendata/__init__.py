@@ -13,6 +13,7 @@ from .models import (
     OfferDescription,
     PeakEvent,
     PeakEventsFeed,
+    build_events_table_url,
     normalize_offer_code,
     parse_feed,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "OpenDataResponseError",
     "PeakEvent",
     "PeakEventsFeed",
+    "build_events_table_url",
     "normalize_offer_code",
     "parse_feed",
 ]

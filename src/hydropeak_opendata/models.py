@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from functools import lru_cache
 from typing import Any
+from urllib.parse import quote_plus
 
-from .const import OFFER_CODE_ALIASES, OFFER_CODE_PATTERN
+from .const import OFFER_CODE_ALIASES, OFFER_CODE_PATTERN, PEAK_EVENTS_TABLE_URL
 from .exceptions import OpenDataParseError
 
 
@@ -41,6 +42,23 @@ def normalize_offer_code(offer: str) -> str:
         # Recurse so a known code in any case/accent maps to its canonical form.
         return normalize_offer_code(match.group(1))
     return offer
+
+
+def build_events_table_url(offer: str | None = None) -> str:
+    """URL of the peak events table on the open data portal, sorted by start date.
+
+    With ``offer``, the table is refined to it. When ``offer`` differs from
+    its normalized code (see :func:`normalize_offer_code`), both are refined
+    so records published under either spelling are shown; otherwise only the
+    code is used.
+    """
+    params = ["sort=datedebut"]
+    if offer is not None:
+        code = normalize_offer_code(offer)
+        values = [code] if offer == code else [offer, code]
+        params += [f"refine.offre={quote_plus(value, safe='()')}" for value in values]
+    params += ["disjunctive.offre", "disjunctive.plagehoraire", "disjunctive.secteurclient"]
+    return f"{PEAK_EVENTS_TABLE_URL}?{'&'.join(params)}"
 
 
 @dataclass(frozen=True, slots=True)
