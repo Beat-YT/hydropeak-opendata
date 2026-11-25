@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import date
 
 import pytest
 from aiohttp import web
@@ -14,6 +15,7 @@ from hydropeak_opendata import (
     OpenDataParseError,
     OpenDataRateLimitError,
     OpenDataResponseError,
+    Sector,
 )
 
 
@@ -170,21 +172,6 @@ async def test_get_offer_labels_identity_until_upstream_ships_titles(client, fak
     assert all(key == value for key, value in labels.items())
 
 
-async def test_get_offer_descriptions_paginates(client, fake):
-    def make_record(index):
-        return {"offresdisponibles": f"OFFER_{index}", "description_fr": f"desc {index}"}
-
-    fake.desc_pages = [
-        {"total_count": 150, "results": [make_record(i) for i in range(100)]},
-        {"total_count": 150, "results": [make_record(i) for i in range(100, 150)]},
-    ]
-    descriptions = await client.get_offer_descriptions()
-
-    assert len(descriptions) == 150
-    assert descriptions[0].offer == "OFFER_0"
-    assert descriptions[-1].offer == "OFFER_149"
-
-
 async def test_get_offer_descriptions_rate_limited(client, fake):
     fake.desc_status = 429
     with pytest.raises(OpenDataRateLimitError):
@@ -222,3 +209,86 @@ async def test_get_events_matches_any_spelling_end_to_end(client, fake):
         ], query
 
     assert [e.offer for e in await client.get_events("chaîne de BLOC")] == ["Chaine de bloc"]
+
+
+def offers_feed(*offers):
+    return {"offresDisponibles": list(offers), "evenements": []}
+
+
+def description(offer, client_type="affaires", fin="2027-03-31"):
+    return {"offresdisponibles": offer, "type_clientele": client_type, "fin": fin}
+
+
+def descriptions_page(*records):
+    return [{"total_count": len(records), "results": list(records)}]
+
+
+async def test_is_offer_available_matches_any_spelling(client, fake):
+    fake.feed_responses = [json_ok(offers_feed("Credit hivernal Residentiel (CPC-D)"))]
+    fake.feed_responses += [status(304)] * 2
+    fake.desc_pages = descriptions_page()
+    today = date(2026, 11, 25)
+
+    assert await client.is_offer_available("CPC-D", today)
+    assert await client.is_offer_available("crédit hivernal résidentiel (cpc-d)", today)
+    assert not await client.is_offer_available("CPC-G", today)
+
+
+async def test_is_offer_available_uses_descriptions_within_grace(client, fake):
+    fake.feed_responses = [json_ok(offers_feed("OEA")), status(304), status(304)]
+    fake.desc_pages = descriptions_page(description("GDP-Affaires", fin="2026-03-31"))
+
+    assert await client.is_offer_available("GDP-Affaires", date(2026, 5, 30))
+    assert not await client.is_offer_available("GDP-Affaires", date(2026, 5, 31))
+    assert not await client.is_offer_available("TPC-M", date(2026, 4, 1))
+
+
+async def test_is_offer_available_when_descriptions_fail(client, fake):
+    fake.feed_responses = [json_ok(offers_feed("OEA")), status(304)]
+    fake.desc_status = 429
+
+    assert await client.is_offer_available("OEA", date(2026, 11, 25))
+    assert not await client.is_offer_available("CPC-G", date(2026, 11, 25))
+
+
+async def test_is_offer_available_raises_on_feed_error(client, fake):
+    fake.feed_responses = [status(503)]
+    with pytest.raises(OpenDataResponseError):
+        await client.is_offer_available("CPC-D", date(2026, 11, 25))
+
+
+async def test_get_sector_offers(client, fake):
+    fake.feed_responses = [
+        json_ok(offers_feed("CPC-D", "Flex Residentiel (TPC-DPC)", "CPC-G", "OEA", "Autre")),
+        status(304),
+    ]
+    fake.desc_pages = descriptions_page(
+        description("Credit hivernal Residentiel (CPC-D)", "residentielle"),
+        description("TPC-DPC", "affaires"),
+        description("Nouvelle offre", "Résidentielle"),
+        description("Ancienne offre", "residentielle", fin="2026-03-31"),
+        description("Autre", "mixte"),
+    )
+    today = date(2026, 11, 25)
+
+    assert await client.get_sector_offers(Sector.RESIDENTIAL, today) == (
+        "CPC-D",
+        "Flex Residentiel (TPC-DPC)",
+        "Nouvelle offre",
+    )
+    assert await client.get_sector_offers(Sector.BUSINESS, today) == ("CPC-G", "OEA", "Autre")
+
+
+async def test_get_sector_offers_without_descriptions(client, fake):
+    fake.feed_responses = [
+        json_ok(offers_feed("Credit hivernal Residentiel (CPC-D)", "TPC-DPC", "TPC-GPC")),
+        status(304),
+    ]
+    fake.desc_status = 503
+    today = date(2026, 11, 25)
+
+    assert await client.get_sector_offers(Sector.RESIDENTIAL, today) == (
+        "Credit hivernal Residentiel (CPC-D)",
+        "TPC-DPC",
+    )
+    assert await client.get_sector_offers(Sector.BUSINESS, today) == ("TPC-GPC",)

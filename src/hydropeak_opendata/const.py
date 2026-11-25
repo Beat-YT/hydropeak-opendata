@@ -13,7 +13,7 @@ OFFER_DESCRIPTIONS_URL: Final = (
     "https://donnees.hydroquebec.com/api/explore/v2.1/catalog/datasets"
     "/evenements-de-pointe-offres-disponibles/records"
 )
-DESCRIPTIONS_PAGE_SIZE: Final = 100
+DESCRIPTIONS_LIMIT: Final = 100
 DESCRIPTION_GRACE: Final = timedelta(days=60)
 PEAK_EVENTS_TABLE_URL: Final = (
     "https://donnees.hydroquebec.com/explore/dataset/evenements-pointe/table/"
@@ -30,6 +30,8 @@ OFFER_CODE_ALIASES: Final[dict[str, str]] = {
     "Flex Residentiel (TPC-DPC)": "TPC-DPC",
     "Flex Affaires (TPC-GPC)": "TPC-GPC",
 }
+
+RESIDENTIAL_OFFER_CODES: Final = ("CPC-D", "TPC-DPC")
 
 # Fallback for display names not in OFFER_CODE_ALIASES: a trailing
 # parenthesized code, e.g. "Flex D (TPC-DPC)" -> "TPC-DPC". ``\w`` is

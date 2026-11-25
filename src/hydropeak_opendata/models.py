@@ -6,11 +6,17 @@ import unicodedata
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from enum import StrEnum
 from functools import lru_cache
 from typing import Any
 from urllib.parse import quote_plus
 
-from .const import OFFER_CODE_ALIASES, OFFER_CODE_PATTERN, PEAK_EVENTS_TABLE_URL
+from .const import (
+    OFFER_CODE_ALIASES,
+    OFFER_CODE_PATTERN,
+    PEAK_EVENTS_TABLE_URL,
+    RESIDENTIAL_OFFER_CODES,
+)
 from .exceptions import OpenDataParseError
 
 
@@ -48,6 +54,22 @@ def normalize_offer_code(offer: str) -> str:
 def _offer_in(offer: str, candidates: Iterable[str]) -> bool:
     key = _fold(normalize_offer_code(offer))
     return any(_fold(normalize_offer_code(candidate)) == key for candidate in candidates)
+
+
+class Sector(StrEnum):
+    """Customer sector an offer belongs to."""
+
+    RESIDENTIAL = "residential"
+    BUSINESS = "business"
+
+
+def _offer_sector(offer: str, descriptions: Iterable[OfferDescription]) -> Sector:
+    if _offer_in(offer, RESIDENTIAL_OFFER_CODES) or any(
+        _offer_in(offer, (d.offer,)) and _fold(d.client_type or "").startswith("residenti")
+        for d in descriptions
+    ):
+        return Sector.RESIDENTIAL
+    return Sector.BUSINESS
 
 
 def build_events_table_url(offer: str | None = None) -> str:

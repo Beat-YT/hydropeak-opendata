@@ -10,7 +10,7 @@ import aiohttp
 
 from .const import (
     DESCRIPTION_GRACE,
-    DESCRIPTIONS_PAGE_SIZE,
+    DESCRIPTIONS_LIMIT,
     OFFER_DESCRIPTIONS_URL,
     PEAK_EVENTS_URL,
 )
@@ -25,7 +25,9 @@ from .models import (
     OfferDescription,
     PeakEvent,
     PeakEventsFeed,
+    Sector,
     _offer_in,
+    _offer_sector,
     parse_feed,
     parse_offer_description,
 )
@@ -127,43 +129,32 @@ class OpenDataClient:
 
         This endpoint is rate limited (429 raises
         :class:`OpenDataRateLimitError`), so it is intended for occasional
-        use such as a setup flow, not for polling. Results are paginated
-        transparently. ``active_on`` filters to descriptions whose validity
+        use such as a setup flow, not for polling. One request returns at
+        most ``DESCRIPTIONS_LIMIT`` records (the API maximum), newest first
+        by end date. ``active_on`` filters to descriptions whose validity
         window covers that date.
         """
-        params: dict[str, str | int] = {"limit": DESCRIPTIONS_PAGE_SIZE}
+        params: dict[str, str | int] = {"limit": DESCRIPTIONS_LIMIT, "order_by": "fin desc"}
         if active_on is not None:
             day = active_on.isoformat()
             params["where"] = f"debut<='{day}' AND fin>='{day}'"
 
-        descriptions: list[OfferDescription] = []
-        offset = 0
-        while True:
-            try:
-                async with self._session.get(
-                    self._offer_descriptions_url,
-                    params={**params, "offset": offset},
-                    timeout=self._timeout,
-                ) as response:
-                    _raise_for_status(response)
-                    data = await response.json(content_type=None)
-            except OSError as err:
-                raise OpenDataConnectionError(f"Error fetching descriptions: {err}") from err
-            except aiohttp.ClientError as err:
-                raise OpenDataConnectionError(f"Error fetching descriptions: {err}") from err
-            except TimeoutError as err:
-                raise OpenDataConnectionError("Timeout fetching descriptions") from err
+        try:
+            async with self._session.get(
+                self._offer_descriptions_url, params=params, timeout=self._timeout
+            ) as response:
+                _raise_for_status(response)
+                data = await response.json(content_type=None)
+        except OSError as err:
+            raise OpenDataConnectionError(f"Error fetching descriptions: {err}") from err
+        except aiohttp.ClientError as err:
+            raise OpenDataConnectionError(f"Error fetching descriptions: {err}") from err
+        except TimeoutError as err:
+            raise OpenDataConnectionError("Timeout fetching descriptions") from err
 
-            if not isinstance(data, dict) or not isinstance(data.get("results"), list):
-                raise OpenDataParseError("Unexpected offer descriptions payload")
-
-            results = data["results"]
-            descriptions.extend(parse_offer_description(item) for item in results)
-
-            total = data.get("total_count", 0)
-            offset += len(results)
-            if not results or offset >= total:
-                return tuple(descriptions)
+        if not isinstance(data, dict) or not isinstance(data.get("results"), list):
+            raise OpenDataParseError("Unexpected offer descriptions payload")
+        return tuple(parse_offer_description(item) for item in data["results"])
 
     async def is_offer_available(self, offer: str, today: date) -> bool:
         """Whether the feed or a current offer description lists ``offer``.
@@ -185,6 +176,32 @@ class OpenDataClient:
         return _offer_in(
             offer, (d.offer for d in descriptions if d.end is not None and d.end >= cutoff)
         )
+
+    async def get_sector_offers(self, sector: Sector, today: date) -> tuple[str, ...]:
+        """Offers in ``sector``, from the feed plus descriptions not ended by ``today``.
+
+        ``CPC-D`` and ``TPC-DPC`` are residential. Any other offer is
+        residential only if a description says so, and business otherwise,
+        including when no description covers it. Spellings are deduplicated
+        (see :func:`normalize_offer_code`), the feed's spelling winning. If
+        descriptions cannot be fetched, only the feed is used. Feed errors
+        raise.
+        """
+        feed = await self.get_feed()
+        try:
+            descriptions = tuple(
+                d
+                for d in await self.get_offer_descriptions()
+                if d.end is not None and d.end >= today
+            )
+        except OpenDataError:
+            descriptions = ()
+
+        offers: list[str] = []
+        for offer in (*feed.offers, *(d.offer for d in descriptions)):
+            if not _offer_in(offer, offers):
+                offers.append(offer)
+        return tuple(offer for offer in offers if _offer_sector(offer, descriptions) is sector)
 
 
 def _raise_for_status(response: aiohttp.ClientResponse) -> None:
