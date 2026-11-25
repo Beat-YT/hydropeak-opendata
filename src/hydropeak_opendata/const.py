@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import timedelta
 from typing import Final
 
 PEAK_EVENTS_URL: Final = (
@@ -13,6 +14,7 @@ OFFER_DESCRIPTIONS_URL: Final = (
     "/evenements-de-pointe-offres-disponibles/records"
 )
 DESCRIPTIONS_PAGE_SIZE: Final = 100
+DESCRIPTION_GRACE: Final = timedelta(days=60)
 PEAK_EVENTS_TABLE_URL: Final = (
     "https://donnees.hydroquebec.com/explore/dataset/evenements-pointe/table/"
 )

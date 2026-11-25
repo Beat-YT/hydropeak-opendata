@@ -2,7 +2,7 @@
 
 Async Python client for Hydro-Québec's public **peak events** (pointes hivernales) open data. No account, no login — just the open data feed.
 
-Extracted from the [HydroPeak](https://github.com/Beat-YT/hydropeak-ha) Home Assistant integration.
+Powers the [Hydro-Québec Peak Events](https://www.home-assistant.io/integrations/hydroquebec_peak/) integration in Home Assistant.
 
 ## Data sources
 

@@ -8,9 +8,15 @@ from datetime import date
 
 import aiohttp
 
-from .const import DESCRIPTIONS_PAGE_SIZE, OFFER_DESCRIPTIONS_URL, PEAK_EVENTS_URL
+from .const import (
+    DESCRIPTION_GRACE,
+    DESCRIPTIONS_PAGE_SIZE,
+    OFFER_DESCRIPTIONS_URL,
+    PEAK_EVENTS_URL,
+)
 from .exceptions import (
     OpenDataConnectionError,
+    OpenDataError,
     OpenDataParseError,
     OpenDataRateLimitError,
     OpenDataResponseError,
@@ -19,6 +25,7 @@ from .models import (
     OfferDescription,
     PeakEvent,
     PeakEventsFeed,
+    _offer_in,
     parse_feed,
     parse_offer_description,
 )
@@ -157,6 +164,27 @@ class OpenDataClient:
             offset += len(results)
             if not results or offset >= total:
                 return tuple(descriptions)
+
+    async def is_offer_available(self, offer: str, today: date) -> bool:
+        """Whether the feed or a current offer description lists ``offer``.
+
+        A description counts until ``DESCRIPTION_GRACE`` after it ends.
+        Matching ignores spelling (see
+        :func:`normalize_offer_code`). Offer descriptions are only fetched
+        when the feed does not list the offer; if that fetch fails, the feed
+        alone decides. Feed errors raise.
+        """
+        feed = await self.get_feed()
+        if _offer_in(offer, feed.offers):
+            return True
+        try:
+            descriptions = await self.get_offer_descriptions()
+        except OpenDataError:
+            return False
+        cutoff = today - DESCRIPTION_GRACE
+        return _offer_in(
+            offer, (d.offer for d in descriptions if d.end is not None and d.end >= cutoff)
+        )
 
 
 def _raise_for_status(response: aiohttp.ClientResponse) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unicodedata
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from functools import lru_cache
@@ -42,6 +43,11 @@ def normalize_offer_code(offer: str) -> str:
         # Recurse so a known code in any case/accent maps to its canonical form.
         return normalize_offer_code(match.group(1))
     return offer
+
+
+def _offer_in(offer: str, candidates: Iterable[str]) -> bool:
+    key = _fold(normalize_offer_code(offer))
+    return any(_fold(normalize_offer_code(candidate)) == key for candidate in candidates)
 
 
 def build_events_table_url(offer: str | None = None) -> str:
