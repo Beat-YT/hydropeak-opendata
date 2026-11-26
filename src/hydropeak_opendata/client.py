@@ -162,16 +162,13 @@ class OpenDataClient:
         A description counts until ``DESCRIPTION_GRACE`` after it ends.
         Matching ignores spelling (see
         :func:`normalize_offer_code`). Offer descriptions are only fetched
-        when the feed does not list the offer; if that fetch fails, the feed
-        alone decides. Feed errors raise.
+        when the feed does not list the offer. Errors from either source
+        raise, so ``False`` always means the offer is no longer published.
         """
         feed = await self.get_feed()
         if _offer_in(offer, feed.offers):
             return True
-        try:
-            descriptions = await self.get_offer_descriptions()
-        except OpenDataError:
-            return False
+        descriptions = await self.get_offer_descriptions()
         cutoff = today - DESCRIPTION_GRACE
         return _offer_in(
             offer, (d.offer for d in descriptions if d.end is not None and d.end >= cutoff)

@@ -243,12 +243,13 @@ async def test_is_offer_available_uses_descriptions_within_grace(client, fake):
     assert not await client.is_offer_available("TPC-M", date(2026, 4, 1))
 
 
-async def test_is_offer_available_when_descriptions_fail(client, fake):
+async def test_is_offer_available_raises_when_descriptions_fail(client, fake):
     fake.feed_responses = [json_ok(offers_feed("OEA")), status(304)]
     fake.desc_status = 429
 
     assert await client.is_offer_available("OEA", date(2026, 11, 25))
-    assert not await client.is_offer_available("CPC-G", date(2026, 11, 25))
+    with pytest.raises(OpenDataRateLimitError):
+        await client.is_offer_available("CPC-G", date(2026, 11, 25))
 
 
 async def test_is_offer_available_raises_on_feed_error(client, fake):
